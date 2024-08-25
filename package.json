@@ -1,0 +1,54 @@
+{
+	"name": "tiptap",
+	"version": "0.0.1",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build && npm run package",
+		"preview": "vite preview",
+		"package": "svelte-kit sync && svelte-package && publint",
+		"prepublishOnly": "npm run package"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"svelte": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"!dist/**/*.test.*",
+		"!dist/**/*.spec.*"
+	],
+	"peerDependencies": {
+		"svelte": "^4.0.0"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-auto": "^3.0.0",
+		"@sveltejs/kit": "^2.0.0",
+		"@sveltejs/package": "^2.0.0",
+		"@sveltejs/vite-plugin-svelte": "^3.0.0",
+		"publint": "^0.1.9",
+		"svelte": "^4.2.7",
+		"typescript": "^5.3.2",
+		"vite": "^5.0.11"
+	},
+	"svelte": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"type": "module",
+	"dependencies": {
+		"@tiptap/core": "^2.6.5",
+		"@tiptap/extension-blockquote": "^2.6.5",
+		"@tiptap/extension-bubble-menu": "^2.6.5",
+		"@tiptap/extension-code-block": "^2.6.5",
+		"@tiptap/extension-dropcursor": "^2.6.5",
+		"@tiptap/extension-history": "^2.6.5",
+		"@tiptap/extension-horizontal-rule": "^2.6.5",
+		"@tiptap/extension-image": "^2.6.5",
+		"@tiptap/extension-link": "^2.6.5",
+		"@tiptap/extension-placeholder": "^2.6.5",
+		"@tiptap/extension-text-align": "^2.6.5",
+		"@tiptap/extension-youtube": "^2.6.5",
+		"@tiptap/starter-kit": "^2.6.5",
+		"svelte-legos": "^0.2.4"
+	}
+}
