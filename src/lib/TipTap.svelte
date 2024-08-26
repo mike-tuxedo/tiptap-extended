@@ -22,6 +22,7 @@
     import TableRow from "@tiptap/extension-table-row";
     import Focus from "@tiptap/extension-focus";
     import { PluginKey } from "@tiptap/pm/state";
+    import { Grid } from "./CustomTipTapGrid";
 
     /** Custom Imports */
     import CustomTiptapYoutube from "$lib/CustomTipTapYoutube.js";
@@ -150,6 +151,7 @@
                         target: null,
                     },
                 }),
+                Grid,
             ],
             editorProps: {
                 attributes: {
@@ -163,14 +165,15 @@
             },
             onTransaction: () => {
                 // force re-render so `editor.isActive` works as expected
-                if (editor) editor = editor
-            }
+                if (editor) editor = editor;
+            },
         });
 
         editorElement.addEventListener("paste", handlePaste);
         editorElement.addEventListener("drop", handleDrop);
         editorElement.addEventListener("mousedown", handleMouseDown);
         editorElement.addEventListener("keyup", handleKeyUp);
+        editorElement.addEventListener("keydown", handleKeyDown);
     });
 
     onDestroy(() => {
@@ -227,8 +230,15 @@
         }, 50);
     }
 
-    function handleKeyUp() {
+    function handleKeyUp() {}
+
+    function handleKeyDown(event) {
         
+        if (event.key === "Enter" && event.ctrlKey) {
+            console.log('exitCode');
+            return editor.commands.splitBlock();
+        }
+        return false;
     }
 
     function handleMouseDown(event) {
@@ -285,7 +295,7 @@
                 item.type === "text/uri-list"
             ) {
                 const url = await new Promise((resolve) =>
-                    item.getAsString(resolve),
+                    item.getAsString(resolve)
                 );
                 if (isImageUrl(url)) {
                     await uploadImageFromUrl(url, pos.pos);
@@ -308,7 +318,7 @@
                     .focus()
                     .insertContentAt(
                         pos,
-                        `<img src="${src}" alt="${file.name}"alt="${file.name}"/>`,
+                        `<img src="${src}" alt="${file.name}"alt="${file.name}"/>`
                     )
                     .run();
             });
@@ -332,7 +342,6 @@
             editor.commands.updateAttributes("youtube", {
                 widthClass: htmlClass,
             });
-            
         }
     }
 
@@ -344,7 +353,6 @@
             editor.commands.updateAttributes("youtube", {
                 alignClass: htmlClass,
             });
-            
         }
     }
 
@@ -356,7 +364,6 @@
             editor.commands.updateAttributes("youtube", {
                 alignClass: htmlClass,
             });
-            
         }
     }
 
@@ -409,13 +416,12 @@
                 .run();
             url = ""; // Clear the input after setting the link
         }
-        
+
         urlModal.close();
     }
 
     function unsetLink() {
         editor.chain().focus().unsetLink().run();
-        
     }
 </script>
 
@@ -440,7 +446,7 @@
             on:click={() => {
                 editor.chain().focus().toggleHeading({ level: 1 }).run();
             }}
-            class:active={editor?.isActive('heading', { level: 1 })}
+            class:active={editor?.isActive("heading", { level: 1 })}
         >
             <Icon name="heading-1" />
         </button>
@@ -448,7 +454,7 @@
             on:click={() => {
                 editor.chain().focus().toggleHeading({ level: 2 }).run();
             }}
-            class:active={editor?.isActive('heading', { level: 2 })}
+            class:active={editor?.isActive("heading", { level: 2 })}
         >
             <Icon name="heading-2" />
         </button>
@@ -456,7 +462,7 @@
             on:click={() => {
                 editor.chain().focus().toggleHeading({ level: 3 }).run();
             }}
-            class:active={editor?.isActive('heading', { level: 3 })}
+            class:active={editor?.isActive("heading", { level: 3 })}
         >
             <Icon name="heading-3" />
         </button>
@@ -464,7 +470,7 @@
             on:click={() => {
                 editor.chain().focus().toggleHeading({ level: 4 }).run();
             }}
-            class:active={editor?.isActive('heading', { level: 4 })}
+            class:active={editor?.isActive("heading", { level: 4 })}
         >
             <Icon name="heading-4" />
         </button>
@@ -472,7 +478,7 @@
             on:click={() => {
                 editor.chain().focus().toggleBold().run();
             }}
-            class:active={editor?.isActive('bold')}
+            class:active={editor?.isActive("bold")}
         >
             <Icon name="bold" />
         </button>
@@ -480,7 +486,7 @@
             on:click={() => {
                 editor.chain().focus().toggleItalic().run();
             }}
-            class:active={editor?.isActive('italic')}
+            class:active={editor?.isActive("italic")}
         >
             <Icon name="italic" />
         </button>
@@ -488,7 +494,7 @@
             on:click={() => {
                 editor.chain().focus().toggleBulletList().run();
             }}
-            class:active={editor?.isActive('bulletList')}
+            class:active={editor?.isActive("bulletList")}
         >
             <Icon name="bullet-list" />
         </button>
@@ -496,7 +502,7 @@
             on:click={() => {
                 editor.chain().focus().toggleOrderedList().run();
             }}
-            class:active={editor?.isActive('orderedList')}
+            class:active={editor?.isActive("orderedList")}
         >
             <Icon name="ordered-list" />
         </button>
@@ -504,7 +510,6 @@
         <button
             on:click={() => {
                 editor.chain().focus().setTextAlign("left").run();
-                
             }}
         >
             <Icon name="align-left" />
@@ -512,7 +517,6 @@
         <button
             on:click={() => {
                 editor.chain().focus().setTextAlign("center").run();
-                
             }}
         >
             <Icon name="align-center" />
@@ -520,7 +524,6 @@
         <button
             on:click={() => {
                 editor.chain().focus().setTextAlign("right").run();
-                
             }}
         >
             <Icon name="align-right" />
@@ -529,7 +532,6 @@
         <button
             on:click={() => {
                 editor.chain().focus().toggleBlockquote().run();
-                
             }}
         >
             <Icon name="blockquote" />
@@ -537,7 +539,6 @@
         <button
             on:click={() => {
                 editor.chain().focus().toggleCodeBlock().run();
-                
             }}
         >
             <Icon name="code-block" />
@@ -546,7 +547,6 @@
             on:click={() => {
                 {
                     editor.chain().focus().setHorizontalRule().run();
-                    
                 }
             }}
         >
@@ -580,6 +580,13 @@
                     .run()}
         >
             <Icon name="table" />
+        </button>
+        <button
+            on:click={() => {
+                editor.chain().focus().setGrid().run();
+            }}
+        >
+            <Icon name="grid" />
         </button>
     </div>
     <div
@@ -666,7 +673,7 @@
         </button>
     </div>
 
-    <div bind:this={editorElement} class="tiptap-wrapper" {style}></div>
+    <div bind:this={editorElement} class="tiptap-wrapper" {style} />
 
     <dialog class="modal" bind:this={urlModal}>
         <div class="modal-box">

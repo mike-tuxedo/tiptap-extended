@@ -20,8 +20,11 @@
 .tiptap img {
     max-width: 100%;
 }
-.tiptap *:hover {
+.tiptap > *:hover, .tiptap > .grid > *:hover {
     outline: 2px solid rgb(0 182 255 / 34%);
+}
+.tiptap .grid {
+    outline: 1px solid rgba(0, 0, 0, 0.1);
 }
 .tiptap .ProseMirror-gapcursor:after {
     border-top: 3px solid var(--fontColor) !important;

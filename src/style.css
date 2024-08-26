@@ -15,12 +15,17 @@ body {
 
 table td, table th {
     border-width: 1px;
+    min-width: 100px;
+    vertical-align: top;
 }
 table td:hover, table th:hover, table th.selectedCell, table td.selectedCell {
     outline: 2px solid rgb(0 182 255 / 34%);
 }
 table th {
     background: var(--tableHeaderBgColor);
+}
+table td * {
+    margin: 0 !important;
 }
 
 p {
@@ -29,5 +34,14 @@ p {
 }
 
 ul li {
+    margin: 0 !important;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat( auto-fit, minmax(250px, 1fr) );
+    gap: 20px;
+}
+.grid * {
     margin: 0 !important;
 }
