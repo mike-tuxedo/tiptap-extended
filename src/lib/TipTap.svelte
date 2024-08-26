@@ -20,7 +20,6 @@
     import TableCell from "@tiptap/extension-table-cell";
     import TableHeader from "@tiptap/extension-table-header";
     import TableRow from "@tiptap/extension-table-row";
-    import History from "@tiptap/extension-history";
     import Focus from "@tiptap/extension-focus";
     import { PluginKey } from "@tiptap/pm/state";
 
@@ -31,8 +30,9 @@
     import { clickOutsideAction } from "svelte-legos";
 
     export let content = "";
-    export let editor;
-    export let style;
+    export let style = "";
+    export let baseurl = "";
+    let editor;
     let editorElement;
     let editorOuterElement;
     let bubbleNodeMenu;
@@ -42,12 +42,10 @@
     let selectedMedia = null;
     let selectedParagraph = null;
     let currentNode = null;
-    let changedCount = 1;
     let mouseY = 0;
     let url = "";
     let urlModal;
     let urlInput;
-    let baseurl;
 
     const allowedMimeTypes = [
         "image/jpeg",
@@ -163,17 +161,19 @@
                 updateSelectedMedia(editor);
                 content = editor.getHTML();
             },
+            onTransaction: () => {
+                // force re-render so `editor.isActive` works as expected
+                if (editor) editor = editor
+            }
         });
 
         editorElement.addEventListener("paste", handlePaste);
         editorElement.addEventListener("drop", handleDrop);
-        editorElement.addEventListener("click", handleClick);
         editorElement.addEventListener("mousedown", handleMouseDown);
         editorElement.addEventListener("keyup", handleKeyUp);
     });
 
     onDestroy(() => {
-        console.log("destroy tiptap?", editorElement);
         if (editor) {
             editor.destroy();
         }
@@ -181,7 +181,6 @@
         if (editorElement) {
             editorElement.removeEventListener("paste", handlePaste);
             editorElement.removeEventListener("drop", handleDrop);
-            editorElement.addEventListener("click", handleClick);
             editorElement.addEventListener("mousedown", handleMouseDown);
             editorElement.addEventListener("keyup", handleKeyUp);
         }
@@ -229,18 +228,11 @@
     }
 
     function handleKeyUp() {
-        changedCount++;
-    }
-
-    function handleClick(event) {
-        //setSelectedNode(event);
+        
     }
 
     function handleMouseDown(event) {
         setSelectedNode(event);
-
-        console.log(changedCount, currentNode)
-        changedCount++;
     }
 
     function updateSelectedMedia(editor) {
@@ -340,7 +332,7 @@
             editor.commands.updateAttributes("youtube", {
                 widthClass: htmlClass,
             });
-            changedCount++;
+            
         }
     }
 
@@ -352,7 +344,7 @@
             editor.commands.updateAttributes("youtube", {
                 alignClass: htmlClass,
             });
-            changedCount++;
+            
         }
     }
 
@@ -364,7 +356,7 @@
             editor.commands.updateAttributes("youtube", {
                 alignClass: htmlClass,
             });
-            changedCount++;
+            
         }
     }
 
@@ -417,16 +409,14 @@
                 .run();
             url = ""; // Clear the input after setting the link
         }
-        changedCount++;
+        
         urlModal.close();
     }
 
     function unsetLink() {
         editor.chain().focus().unsetLink().run();
-        changedCount++;
+        
     }
-
-    $: console.log(currentNode);
 </script>
 
 <div
@@ -438,80 +428,75 @@
         bind:this={bubbleNodeMenu}
         class="tiptap-controls absolute top-0 flex bubble-menu"
     >
-        <button
+        <!-- <button
             on:click={() => {
-                editor.chain().focus().toggleHeading({ level: 1 }).run();
-                changedCount++;
+                editor.chain().focus().toggleParagraph().run();
             }}
-            class:active={changedCount && currentNode?.tagName === 'P'}
+            class:active={editor?.isActive('paragraph')}
         >
             <Icon name="paragraph" />
-        </button>
+        </button> -->
         <button
             on:click={() => {
                 editor.chain().focus().toggleHeading({ level: 1 }).run();
-                changedCount++;
             }}
-            class:active={changedCount && currentNode?.tagName === 'H1'}
+            class:active={editor?.isActive('heading', { level: 1 })}
         >
             <Icon name="heading-1" />
         </button>
         <button
             on:click={() => {
                 editor.chain().focus().toggleHeading({ level: 2 }).run();
-                changedCount++;
             }}
-            class:active={changedCount && currentNode && editor?.isActive('heading', { level: 2 })}
+            class:active={editor?.isActive('heading', { level: 2 })}
         >
             <Icon name="heading-2" />
         </button>
         <button
             on:click={() => {
                 editor.chain().focus().toggleHeading({ level: 3 }).run();
-                changedCount++;
             }}
-            class:active={changedCount && currentNode && editor?.isActive('heading', { level: 3 })}
+            class:active={editor?.isActive('heading', { level: 3 })}
         >
             <Icon name="heading-3" />
         </button>
         <button
             on:click={() => {
                 editor.chain().focus().toggleHeading({ level: 4 }).run();
-                changedCount++;
             }}
-            class:active={changedCount && currentNode && editor?.isActive('heading', { level: 4 })}
+            class:active={editor?.isActive('heading', { level: 4 })}
         >
             <Icon name="heading-4" />
         </button>
         <button
             on:click={() => {
                 editor.chain().focus().toggleBold().run();
-                changedCount++;
             }}
+            class:active={editor?.isActive('bold')}
         >
             <Icon name="bold" />
         </button>
         <button
             on:click={() => {
                 editor.chain().focus().toggleItalic().run();
-                changedCount++;
             }}
+            class:active={editor?.isActive('italic')}
         >
             <Icon name="italic" />
         </button>
         <button
             on:click={() => {
                 editor.chain().focus().toggleBulletList().run();
-                changedCount++;
             }}
+            class:active={editor?.isActive('bulletList')}
         >
             <Icon name="bullet-list" />
         </button>
         <button
             on:click={() => {
                 editor.chain().focus().toggleOrderedList().run();
-                changedCount++;
             }}
+            class:active={editor?.isActive('orderedList')}
         >
             <Icon name="ordered-list" />
         </button>
@@ -519,7 +504,7 @@
         <button
             on:click={() => {
                 editor.chain().focus().setTextAlign("left").run();
-                changedCount++;
+                
             }}
         >
             <Icon name="align-left" />
@@ -527,7 +512,7 @@
         <button
             on:click={() => {
                 editor.chain().focus().setTextAlign("center").run();
-                changedCount++;
+                
             }}
         >
             <Icon name="align-center" />
@@ -535,7 +520,7 @@
         <button
             on:click={() => {
                 editor.chain().focus().setTextAlign("right").run();
-                changedCount++;
+                
             }}
         >
             <Icon name="align-right" />
@@ -544,7 +529,7 @@
         <button
             on:click={() => {
                 editor.chain().focus().toggleBlockquote().run();
-                changedCount++;
+                
             }}
         >
             <Icon name="blockquote" />
@@ -552,7 +537,7 @@
         <button
             on:click={() => {
                 editor.chain().focus().toggleCodeBlock().run();
-                changedCount++;
+                
             }}
         >
             <Icon name="code-block" />
@@ -561,7 +546,7 @@
             on:click={() => {
                 {
                     editor.chain().focus().setHorizontalRule().run();
-                    changedCount++;
+                    
                 }
             }}
         >

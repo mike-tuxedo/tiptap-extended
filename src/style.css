@@ -13,117 +13,21 @@ body {
     color: var(--fontColor);
 }
 
-/**
-* Generic
-*/
 table td, table th {
     border-width: 1px;
 }
 table td:hover, table th:hover, table th.selectedCell, table td.selectedCell {
-    outline: 2px solid rgb(0 182 255 / 34%)
+    outline: 2px solid rgb(0 182 255 / 34%);
 }
 table th {
     background: var(--tableHeaderBgColor);
 }
 
-
-
-/**
-* Tiptap
-*/
-.tiptap-wrapper {
-    padding: var(--tiptapPadding);
-    border: 1px solid var(--borderColor);
+p {
+    margin-top: 0 !important;
+    margin-bottom: 10px !important;
 }
 
-.tiptap {
-    outline: unset;
-    width: 100%;
-    height: 100%;
-    /* caret-color: transparent; */
-}
-.tiptap p.is-editor-empty:first-child::before {
-    color: #adb5bd;
-    content: attr(data-placeholder);
-    float: left;
-    height: 0;
-    pointer-events: none;
-}
-.tiptap img {
-    max-width: 100%;
-}
-
-/* The typewriter cursor effect */
-@keyframes blink-caret {
-    from,
-    to {
-        border-color: transparent;
-    }
-    50% {
-        border-color: var(--fontColor);
-    }
-}
-/* .tiptap p.has-focus::after {
-    content: '';
-    display: inline-block;
-    height: 30px;
-    padding-right: 3px;
-    border-right: 3px solid var(--fontColor);
-    animation: blink-caret 1s step-end infinite;
-} */
-/* .tiptap .has-focus:after {
-    content: "";
-    display: block;
-    clear: both;
-} */
-
-.tiptap .ProseMirror-gapcursor:after {
-    border-top: 3px solid var(--fontColor) !important;
-    width: 26px !important;
-}
-
-/**
-* Menu / Tippybox
-*/
-.tippy-box {
-    max-width: unset !important;
-}
-.tippy-box .tiptap-controls {
-    display: flex;
-    gap: 5px;
-    background: var(--controlsBgColor);
-    border: 1px solid var(--borderColor);
-    border-radius: 4px;
-    box-shadow: 0 0 25px rgba(0,0,0,0.05)
-}
-.tippy-box .tiptap-controls button,
-.tippy-box .tiptap-controls input {
-    height: 30px;
-    width: 30px;
-    display: flex;
-    padding: 0px;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    color: var(--fontColor);
-}
-.tippy-box .tiptap-controls button.active,
-.tippy-box .tiptap-controls input.active {
-    background: var(--highlightColor);
-    color: #fff;
-}
-.tiptap-controls button svg {
-    width: 22px;
-    height: 22px;
-}
-.tiptap-controls button:hover {
-    background-color: #f8f9fa;
-}
-.tiptap-controls button:focus {
-    outline: none;
-}
-.fixed-controls {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
+ul li {
+    margin: 0 !important;
 }

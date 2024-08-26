@@ -1,7 +1,7 @@
 <script>
     import TipTap from "$lib/TipTap.svelte";
 
-    let editor;
+    let content;
 </script>
 
-<TipTap bind:editor style="width: 600px; min-height: 400px; margin: 0 auto" />
+<TipTap bind:content baseurl="/" style="width: 100%; max-width: 65ch; min-height: 400px; margin: 0 auto" />

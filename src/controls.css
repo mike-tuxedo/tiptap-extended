@@ -1,0 +1,45 @@
+/**
+* Menu / Tippybox
+*/
+.tippy-box {
+    max-width: unset !important;
+}
+.tippy-box .tiptap-controls {
+    display: flex;
+    gap: 5px;
+    background: var(--controlsBgColor);
+    border: 1px solid var(--borderColor);
+    border-radius: 4px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.05)
+}
+.tippy-box .tiptap-controls button,
+.tippy-box .tiptap-controls input {
+    height: 30px;
+    width: 30px;
+    display: flex;
+    padding: 0px;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    color: var(--fontColor);
+}
+.tippy-box .tiptap-controls button.active,
+.tippy-box .tiptap-controls input.active {
+    background: var(--highlightColor);
+    color: #fff;
+}
+.tiptap-controls button svg {
+    width: 22px;
+    height: 22px;
+}
+.tiptap-controls button:hover {
+    background-color: #f8f9fa;
+}
+.tiptap-controls button:focus {
+    outline: none;
+}
+.fixed-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+}
