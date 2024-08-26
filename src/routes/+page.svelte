@@ -4,8 +4,4 @@
     let editor;
 </script>
 
-<svelte:head>
-    <link rel="stylesheet" href="style.css" />
-</svelte:head>
-
-<TipTap bind:editor={editor} />
+<TipTap bind:editor style="width: 600px; min-height: 400px; margin: 0 auto" />

@@ -16,7 +16,13 @@
     import Placeholder from "@tiptap/extension-placeholder";
     import Image from "@tiptap/extension-image";
     import Link from "@tiptap/extension-link";
+    import Table from "@tiptap/extension-table";
+    import TableCell from "@tiptap/extension-table-cell";
+    import TableHeader from "@tiptap/extension-table-header";
+    import TableRow from "@tiptap/extension-table-row";
     import History from "@tiptap/extension-history";
+    import Focus from "@tiptap/extension-focus";
+    import { PluginKey } from "@tiptap/pm/state";
 
     /** Custom Imports */
     import CustomTiptapYoutube from "$lib/CustomTipTapYoutube.js";
@@ -26,9 +32,12 @@
 
     export let content = "";
     export let editor;
+    export let style;
     let editorElement;
     let editorOuterElement;
-    let bubbleMenu;
+    let bubbleNodeMenu;
+    let bubbleImageMenu;
+    let bubbleTableMenu;
     let fixedMenu;
     let selectedMedia = null;
     let selectedParagraph = null;
@@ -61,19 +70,69 @@
                 TextAlign.configure({
                     types: ["heading", "paragraph"],
                 }),
-                // BubbleMenu.configure({
-                //     element: bubbleMenu,
-                // }),
                 BubbleMenu.configure({
-                    pluginKey: 'nodesBubbleMenu',
-                    element: bubbleMenu,
+                    pluginKey: new PluginKey("nodesBubbleMenu"),
+                    element: bubbleNodeMenu,
+                    tippyOptions: {
+                        offset: [-100, 50],
+                    },
+                    shouldShow: ({
+                        editor,
+                        view,
+                        state,
+                        oldState,
+                        from,
+                        to,
+                    }) => {
+                        return (
+                            !editor.isActive("image") &&
+                            !editor.isActive("table")
+                        );
+                    },
                 }),
                 BubbleMenu.configure({
-                    pluginKey: 'fixedBubbleMenu',
-                    element: fixedMenu,
+                    pluginKey: new PluginKey("imageBubbleMenu"),
+                    element: bubbleImageMenu,
+                    shouldShow: ({
+                        editor,
+                        view,
+                        state,
+                        oldState,
+                        from,
+                        to,
+                    }) => {
+                        return editor.isActive("image");
+                    },
+                }),
+                BubbleMenu.configure({
+                    pluginKey: new PluginKey("tableBubbleMenu"),
+                    element: bubbleTableMenu,
+                    tippyOptions: {
+                        offset: [0, 70],
+                    },
+                    shouldShow: ({
+                        editor,
+                        view,
+                        state,
+                        oldState,
+                        from,
+                        to,
+                    }) => {
+                        return editor.isActive("table");
+                    },
+                }),
+                Focus.configure({
+                    className: "has-focus",
+                    mode: "all",
                 }),
                 Blockquote,
                 CodeBlock,
+                Table.configure({
+                    resizable: true,
+                }),
+                TableRow,
+                TableHeader,
+                TableCell,
                 HorizontalRule,
                 Dropcursor,
                 Youtube,
@@ -94,6 +153,11 @@
                     },
                 }),
             ],
+            editorProps: {
+                attributes: {
+                    class: "prose prose-sm sm:prose-base lg:prose-lg xl:prose-2xl focus:outline-none",
+                },
+            },
             content: content,
             onUpdate: ({ editor }) => {
                 updateSelectedMedia(editor);
@@ -105,6 +169,7 @@
         editorElement.addEventListener("drop", handleDrop);
         editorElement.addEventListener("click", handleClick);
         editorElement.addEventListener("mousedown", handleMouseDown);
+        editorElement.addEventListener("keyup", handleKeyUp);
     });
 
     onDestroy(() => {
@@ -118,6 +183,7 @@
             editorElement.removeEventListener("drop", handleDrop);
             editorElement.addEventListener("click", handleClick);
             editorElement.addEventListener("mousedown", handleMouseDown);
+            editorElement.addEventListener("keyup", handleKeyUp);
         }
     });
 
@@ -162,16 +228,25 @@
         }, 50);
     }
 
-    function handleClick(event) {
-        setSelectedNode(event);
+    function handleKeyUp() {
+        changedCount++;
     }
 
-    function handleMouseDown(event) {}
+    function handleClick(event) {
+        //setSelectedNode(event);
+    }
+
+    function handleMouseDown(event) {
+        setSelectedNode(event);
+
+        console.log(changedCount, currentNode)
+        changedCount++;
+    }
 
     function updateSelectedMedia(editor) {
         const { doc, selection } = editor.state;
         const node = doc.nodeAt(selection.from);
-        
+
         if (node?.type.name === "image" || node?.type.name === "div") {
             selectedMedia = editor.view.domAtPos(selection.from).node;
         } else {
@@ -218,7 +293,7 @@
                 item.type === "text/uri-list"
             ) {
                 const url = await new Promise((resolve) =>
-                    item.getAsString(resolve)
+                    item.getAsString(resolve),
                 );
                 if (isImageUrl(url)) {
                     await uploadImageFromUrl(url, pos.pos);
@@ -232,14 +307,19 @@
     }
 
     async function uploadFile(file, pos = null) {
-        editor
-            .chain()
-            .focus()
-            .insertContentAt(
-                pos,
-                `<img src="https://fastly.picsum.photos/id/1018/200/300.jpg?hmac=IrYgAIczHOxOgmWliW3MlASD3LdAJ_aHAdh5f2aY9Sw" alt="${file.name}"alt="${file.name}"/>`
-            )
-            .run();
+        fetch("https://picsum.photos/600/300")
+            .then((response) => response.url)
+            .then((src) => {
+                console.log(src);
+                editor
+                    .chain()
+                    .focus()
+                    .insertContentAt(
+                        pos,
+                        `<img src="${src}" alt="${file.name}"alt="${file.name}"/>`,
+                    )
+                    .run();
+            });
     }
 
     function isYouTubeLink(text) {
@@ -346,7 +426,6 @@
         changedCount++;
     }
 
-    $: if (editor && editor.isActive("heading", { level: 1 })) console.log('###');
     $: console.log(currentNode);
 </script>
 
@@ -356,213 +435,253 @@
     bind:this={editorOuterElement}
 >
     <div
-        bind:this={bubbleMenu}
+        bind:this={bubbleNodeMenu}
         class="tiptap-controls absolute top-0 flex bubble-menu"
     >
-        {#if selectedParagraph}
-            <button
-                on:click={() => {
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleHeading({ level: 1 })
-                        .run();
+        <button
+            on:click={() => {
+                editor.chain().focus().toggleHeading({ level: 1 }).run();
+                changedCount++;
+            }}
+            class:active={changedCount && currentNode?.tagName === 'P'}
+        >
+            <Icon name="paragraph" />
+        </button>
+        <button
+            on:click={() => {
+                editor.chain().focus().toggleHeading({ level: 1 }).run();
+                changedCount++;
+            }}
+            class:active={changedCount && currentNode?.tagName === 'H1'}
+        >
+            <Icon name="heading-1" />
+        </button>
+        <button
+            on:click={() => {
+                editor.chain().focus().toggleHeading({ level: 2 }).run();
+                changedCount++;
+            }}
+            class:active={changedCount && currentNode && editor?.isActive('heading', { level: 2 })}
+        >
+            <Icon name="heading-2" />
+        </button>
+        <button
+            on:click={() => {
+                editor.chain().focus().toggleHeading({ level: 3 }).run();
+                changedCount++;
+            }}
+            class:active={changedCount && currentNode && editor?.isActive('heading', { level: 3 })}
+        >
+            <Icon name="heading-3" />
+        </button>
+        <button
+            on:click={() => {
+                editor.chain().focus().toggleHeading({ level: 4 }).run();
+                changedCount++;
+            }}
+            class:active={changedCount && currentNode && editor?.isActive('heading', { level: 4 })}
+        >
+            <Icon name="heading-4" />
+        </button>
+        <button
+            on:click={() => {
+                editor.chain().focus().toggleBold().run();
+                changedCount++;
+            }}
+        >
+            <Icon name="bold" />
+        </button>
+        <button
+            on:click={() => {
+                editor.chain().focus().toggleItalic().run();
+                changedCount++;
+            }}
+        >
+            <Icon name="italic" />
+        </button>
+        <button
+            on:click={() => {
+                editor.chain().focus().toggleBulletList().run();
+                changedCount++;
+            }}
+        >
+            <Icon name="bullet-list" />
+        </button>
+        <button
+            on:click={() => {
+                editor.chain().focus().toggleOrderedList().run();
+                changedCount++;
+            }}
+        >
+            <Icon name="ordered-list" />
+        </button>
+        <div style="border-right: 1px solid #888; height: 28px" />
+        <button
+            on:click={() => {
+                editor.chain().focus().setTextAlign("left").run();
+                changedCount++;
+            }}
+        >
+            <Icon name="align-left" />
+        </button>
+        <button
+            on:click={() => {
+                editor.chain().focus().setTextAlign("center").run();
+                changedCount++;
+            }}
+        >
+            <Icon name="align-center" />
+        </button>
+        <button
+            on:click={() => {
+                editor.chain().focus().setTextAlign("right").run();
+                changedCount++;
+            }}
+        >
+            <Icon name="align-right" />
+        </button>
+        <div style="border-right: 1px solid #888; height: 28px" />
+        <button
+            on:click={() => {
+                editor.chain().focus().toggleBlockquote().run();
+                changedCount++;
+            }}
+        >
+            <Icon name="blockquote" />
+        </button>
+        <button
+            on:click={() => {
+                editor.chain().focus().toggleCodeBlock().run();
+                changedCount++;
+            }}
+        >
+            <Icon name="code-block" />
+        </button>
+        <button
+            on:click={() => {
+                {
+                    editor.chain().focus().setHorizontalRule().run();
                     changedCount++;
-                }}
-                class:active={currentNode && currentNode.nodeName === 'H1'}
-            >
-                <Icon name="heading-1" />
-            </button>
-            <button
-                on:click={() => {
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleHeading({ level: 2 })
-                        .run();
-                    changedCount++;
-                }}
-            >
-                <Icon name="heading-2" />
-            </button>
-            <button
-                on:click={() => {
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleHeading({ level: 3 })
-                        .run();
-                    changedCount++;
-                }}
-            >
-                <Icon name="heading-3" />
-            </button>
-            <button
-                on:click={() => {
-                    editor
-                        .chain()
-                        .focus()
-                        .toggleHeading({ level: 4 })
-                        .run();
-                    changedCount++;
-                }}
-            >
-                <Icon name="heading-4" />
-            </button>
-            <button
-                on:click={() => {
-                    editor.chain().focus().toggleBold().run();
-                    changedCount++;
-                }}
-            >
-                <Icon name="bold" />
-            </button>
-            <button
-                on:click={() => {
-                    editor.chain().focus().toggleItalic().run();
-                    changedCount++;
-                }}
-            >
-                <Icon name="italic" />
-            </button>
-            <button
-                on:click={() => {
-                    editor.chain().focus().toggleBulletList().run();
-                    changedCount++;
-                }}
-            >
-                <Icon name="bullet-list" />
-            </button>
-            <button
-                on:click={() => {
-                    editor.chain().focus().toggleOrderedList().run();
-                    changedCount++;
-                }}
-            >
-                <Icon name="ordered-list" />
-            </button>
-            <div style="border-right: 1px solid #888; height: 28px" />
-            <button
-                on:click={() => {
-                    editor.chain().focus().setTextAlign("left").run();
-                    changedCount++;
-                }}
-            >
-                <Icon name="align-left" />
-            </button>
-            <button
-                on:click={() => {
-                    editor.chain().focus().setTextAlign("center").run();
-                    changedCount++;
-                }}
-            >
-                <Icon name="align-center" />
-            </button>
-            <button
-                on:click={() => {
-                    editor.chain().focus().setTextAlign("right").run();
-                    changedCount++;
-                }}
-            >
-                <Icon name="align-right" />
-            </button>
-            <div style="border-right: 1px solid #888; height: 28px" />
-            <button
-                on:click={() => {
-                    editor.chain().focus().toggleBlockquote().run();
-                    changedCount++;
-                }}
-            >
-                <Icon name="blockquote" />
-            </button>
-            <button
-                on:click={() => {
-                    editor.chain().focus().toggleCodeBlock().run();
-                    changedCount++;
-                }}
-            >
-                <Icon name="code-block" />
-            </button>
-            <button
-                on:click={() => {
-                    {
-                        editor.chain().focus().setHorizontalRule().run();
-                        changedCount++;
-                    }
-                }}
-            >
-                <Icon name="horizontal-rule" />
-            </button>
+                }
+            }}
+        >
+            <Icon name="horizontal-rule" />
+        </button>
 
-            <button on:click={showUrlModal}> Link </button>
-            <button
-                on:click={unsetLink}
-                disabled={!editor?.isActive("link")}
-            >
-                Unlink
-            </button>
+        <button on:click={showUrlModal}><Icon name="link" /></button>
+        <button on:click={unsetLink} disabled={!editor?.isActive("link")}>
+            <Icon name="unlink" />
+        </button>
 
-            <button class="relative">
-                <Icon name="image" />
-                <input
-                    class="absolute w-full h-full top-0 left-0 opacity-0"
-                    type="file"
-                    accept="image/*"
-                    on:change={(event) => handleUpload(event)}
-                />
-            </button>
-        {:else if selectedMedia}
-            <button on:click={() => applyImageWidth("w-full")}
-                ><Icon name="full-width" /></button
-            >
-            <button on:click={() => applyImageWidth("w-1/2")}
-                ><Icon name="resize" /></button
-            >
-            <button on:click={() => applyImageWidth("w-1/4")}
-                ><Icon name="resize-small" /></button
-            >
-            <div style="border-right: 1px solid #888; height: 28px" />
-            <button on:click={() => applyImageFloats("float-left")}
-                ><Icon name="float-left" /></button
-            >
-            <button on:click={() => applyImageAlignment("mr-auto")}
-                ><Icon name="align-left" /></button
-            >
-            <button on:click={() => applyImageAlignment("mx-auto")}
-                ><Icon name="align-center" /></button
-            >
-            <button on:click={() => applyImageAlignment("ml-auto")}
-                ><Icon name="align-right" /></button
-            >
-            <button on:click={() => applyImageFloats("float-right")}
-                ><Icon name="float-right" /></button
-            >
-            <div
-                style="border-right: 1px solid #888; margin-top: 8px; height: 28px"
+        <button class="relative">
+            <Icon name="image" />
+            <input
+                class="absolute w-full h-full top-0 left-0 opacity-0"
+                type="file"
+                accept="image/*"
+                on:change={(event) => handleUpload(event)}
             />
-            <button on:click={deleteImage}><Icon name="trash" /></button>
-        {/if}
-
+        </button>
+        <button
+            on:click={() =>
+                editor
+                    .chain()
+                    .focus()
+                    .insertTable({
+                        rows: 3,
+                        cols: 3,
+                        withHeaderRow: true,
+                    })
+                    .run()}
+        >
+            <Icon name="table" />
+        </button>
     </div>
-    
+    <div
+        bind:this={bubbleTableMenu}
+        class="tiptap-controls absolute top-0 flex bubble-menu"
+    >
+        <button on:click={() => editor.chain().focus().addColumnBefore().run()}>
+            <Icon name="tableAddColBefore" />
+        </button>
+        <button on:click={() => editor.chain().focus().addColumnAfter().run()}
+            ><Icon name="tableAddColAfter" /></button
+        >
+        <button on:click={() => editor.chain().focus().deleteColumn().run()}
+            ><Icon name="tableColDelete" /></button
+        >
+        <button on:click={() => editor.chain().focus().addRowBefore().run()}
+            ><Icon name="tableAddRowBefore" /></button
+        >
+        <button on:click={() => editor.chain().focus().addRowAfter().run()}
+            ><Icon name="tableAddRowAfter" /></button
+        >
+        <button on:click={() => editor.chain().focus().deleteRow().run()}
+            ><Icon name="tableRowDelete" /></button
+        >
+        <button on:click={() => editor.chain().focus().mergeCells().run()}
+            ><Icon name="tableMerge" /></button
+        >
+        <button on:click={() => editor.chain().focus().splitCell().run()}
+            ><Icon name="tableSplit" /></button
+        >
+        <button
+            on:click={() => editor.chain().focus().toggleHeaderColumn().run()}
+        >
+            <Icon name="tableHeaderCol" />
+        </button>
+        <button on:click={() => editor.chain().focus().toggleHeaderRow().run()}>
+            <Icon name="tableHeaderRow" />
+        </button>
+        <button on:click={() => editor.chain().focus().deleteTable().run()}
+            ><Icon name="trash" /></button
+        >
+    </div>
+    <div
+        bind:this={bubbleImageMenu}
+        class="tiptap-controls absolute top-0 flex bubble-menu"
+    >
+        <button on:click={() => applyImageWidth("w-full")}
+            ><Icon name="full-width" /></button
+        >
+        <button on:click={() => applyImageWidth("w-1/2")}
+            ><Icon name="resize" /></button
+        >
+        <button on:click={() => applyImageWidth("w-1/4")}
+            ><Icon name="resize-small" /></button
+        >
+        <div style="border-right: 1px solid #888; height: 28px" />
+        <button on:click={() => applyImageFloats("float-left")}
+            ><Icon name="float-left" /></button
+        >
+        <button on:click={() => applyImageAlignment("mr-auto")}
+            ><Icon name="align-left" /></button
+        >
+        <button on:click={() => applyImageAlignment("mx-auto")}
+            ><Icon name="align-center" /></button
+        >
+        <button on:click={() => applyImageAlignment("ml-auto")}
+            ><Icon name="align-right" /></button
+        >
+        <button on:click={() => applyImageFloats("float-right")}
+            ><Icon name="float-right" /></button
+        >
+        <div
+            style="border-right: 1px solid #888; margin-top: 8px; height: 28px"
+        />
+        <button on:click={deleteImage}><Icon name="trash" /></button>
+    </div>
+
     <div bind:this={fixedMenu} class="fixed-controls">
-        {#if editor}
-            <button
-                on:click={() => editor.chain().focus().undo().run()}
-                disabled={!editor.can().undo()}
-            >
-                Undo
-            </button>
-            <button
-                on:click={() => editor.chain().focus().redo().run()}
-                disabled={!editor.can().redo()}
-            >
-                Redo
-            </button>
-        {/if}
+        <button on:click={() => editor?.chain().focus().undo().run()}>
+            Undo
+        </button>
+        <button on:click={() => editor?.chain().focus().redo().run()}>
+            Redo
+        </button>
     </div>
 
-    <div bind:this={editorElement} class="tiptap-editor"></div>
+    <div bind:this={editorElement} class="tiptap-wrapper" {style}></div>
 
     <dialog class="modal" bind:this={urlModal}>
         <div class="modal-box">
